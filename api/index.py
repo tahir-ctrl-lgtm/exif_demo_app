@@ -419,8 +419,3 @@ def server_error(error):
     return render_template("500.html"), 500
 
 
-# Export app for Vercel
-# This is the WSGI application that Vercel will use
-def handler(event, context):
-    """Vercel serverless function handler"""
-    return app
