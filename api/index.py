@@ -1,33 +1,23 @@
 """
 Vercel Entry Point for EXIF Demo Application
 """
-from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash, jsonify, Response
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
-import os
 from datetime import datetime
 import secrets
-import shutil
-import sys
-
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import io
 
 app = Flask(__name__, 
             template_folder='../templates',
             static_folder='../static')
-app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
+app.secret_key = secrets.token_hex(32)
 
-# Configuration for Vercel
-UPLOAD_FOLDER = '/tmp/uploads'
+# Configuration for Vercel (in-memory storage only)
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "bmp", "tiff"}
 MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
 
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = MAX_FILE_SIZE
-
-# Ensure upload directory exists
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Mock user database
 users = {
@@ -36,7 +26,7 @@ users = {
     "admin": generate_password_hash("admin123"),
 }
 
-# Mock image metadata storage
+# In-memory image storage (images stored as bytes with metadata)
 uploaded_images = []
 
 
@@ -45,30 +35,26 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def save_with_exif_preserved(file, filepath):
+def store_image_in_memory(file, filename, metadata):
     """
-    🚨 VULNERABILITY: Save file preserving ALL EXIF metadata
+    🚨 VULNERABILITY: Store file IN MEMORY preserving ALL EXIF metadata
     
-    Uses binary copy instead of PIL/Werkzeug to avoid automatic EXIF stripping.
+    Stores the raw binary data without processing, preserving all EXIF metadata.
     This simulates a naive developer who doesn't realize EXIF metadata is a privacy risk.
     """
-    temp_path = filepath + ".tmp"
-    try:
-        # Save to temporary location first
-        file.save(temp_path)
-        
-        # Binary copy preserves ALL EXIF metadata
-        shutil.copy2(temp_path, filepath)
-        
-        # Clean up temporary file
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-        
-        return True
-    except Exception as e:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-        raise e
+    # Read file into memory preserving ALL EXIF data
+    file.seek(0)
+    image_data = file.read()
+    
+    # Store with metadata
+    uploaded_images.append({
+        "filename": filename,
+        "data": image_data,
+        "mimetype": file.content_type or "image/jpeg",
+        **metadata
+    })
+    
+    return True
 
 
 # ============================================================================
@@ -91,7 +77,7 @@ def gallery():
 @app.route("/download/<filename>")
 def download_image(filename):
     """
-    🚨 VULNERABILITY: Serves original image file WITH ALL EXIF DATA
+    🚨 VULNERABILITY: Serves original image WITH ALL EXIF DATA
     
     PRIVACY RISKS:
     - GPS coordinates exposed (home address)
@@ -101,10 +87,17 @@ def download_image(filename):
     - Timestamp metadata included (routine analysis)
     """
     try:
-        return send_file(
-            os.path.join(app.config["UPLOAD_FOLDER"], filename),
-            as_attachment=False,
-            download_name=filename
+        # Find image in memory storage
+        image_obj = next((img for img in uploaded_images if img["filename"] == filename), None)
+        if not image_obj:
+            flash("Image not found", "error")
+            return redirect(url_for("gallery"))
+        
+        # Serve image from memory with ALL EXIF preserved
+        return Response(
+            image_obj["data"],
+            mimetype=image_obj["mimetype"],
+            headers={"Content-Disposition": f"inline; filename={filename}"}
         )
     except Exception as e:
         flash(f"Error downloading image: {str(e)}", "error")
@@ -120,9 +113,16 @@ def view_image(filename):
     Tools like browser developer console can extract this metadata.
     """
     try:
-        return send_file(
-            os.path.join(app.config["UPLOAD_FOLDER"], filename),
-            mimetype="image/jpeg"
+        # Find image in memory storage
+        image_obj = next((img for img in uploaded_images if img["filename"] == filename), None)
+        if not image_obj:
+            flash("Image not found", "error")
+            return redirect(url_for("gallery"))
+        
+        # Serve image from memory with ALL EXIF preserved
+        return Response(
+            image_obj["data"],
+            mimetype=image_obj["mimetype"]
         )
     except Exception as e:
         flash(f"Error loading image: {str(e)}", "error")
@@ -208,24 +208,18 @@ def upload_file():
         filename = secure_filename(
             f"profile_{session['user']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}"
         )
-        filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
 
         try:
-            # 🚨 VULNERABILITY: Save with ALL EXIF preserved (binary copy)
-            save_with_exif_preserved(file, filepath)
-
-            # Store metadata
-            uploaded_images.append(
-                {
-                    "filename": filename,
-                    "uploader": session["user"],
-                    "upload_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "original_name": file.filename,
-                    "endpoint": "/upload",
-                    "field_name": "profile_picture",
-                    "type": "profile",
-                }
-            )
+            # 🚨 VULNERABILITY: Store with ALL EXIF preserved (in-memory)
+            metadata = {
+                "uploader": session["user"],
+                "upload_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "original_name": file.filename,
+                "endpoint": "/upload",
+                "field_name": "profile_picture",
+                "type": "profile",
+            }
+            store_image_in_memory(file, filename, metadata)
 
             flash(
                 f"✅ Profile picture uploaded successfully: {file.filename}", "success"
@@ -267,23 +261,18 @@ def profile():
             filename = secure_filename(
                 f"avatar_{session['user']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}"
             )
-            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
 
             try:
-                # 🚨 VULNERABILITY: Save with ALL EXIF preserved (binary copy)
-                save_with_exif_preserved(file, filepath)
-
-                uploaded_images.append(
-                    {
-                        "filename": filename,
-                        "uploader": session["user"],
-                        "upload_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        "original_name": file.filename,
-                        "endpoint": "/profile",
-                        "field_name": "avatar",
-                        "type": "avatar",
-                    }
-                )
+                # 🚨 VULNERABILITY: Store with ALL EXIF preserved (in-memory)
+                metadata = {
+                    "uploader": session["user"],
+                    "upload_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "original_name": file.filename,
+                    "endpoint": "/profile",
+                    "field_name": "avatar",
+                    "type": "avatar",
+                }
+                store_image_in_memory(file, filename, metadata)
 
                 flash("✅ Avatar updated successfully!", "success")
             except Exception as e:
@@ -328,23 +317,18 @@ def settings():
             filename = secure_filename(
                 f"bg_{session['user']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}"
             )
-            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
 
             try:
-                # 🚨 VULNERABILITY: Save with ALL EXIF preserved (binary copy)
-                save_with_exif_preserved(file, filepath)
-
-                uploaded_images.append(
-                    {
-                        "filename": filename,
-                        "uploader": session["user"],
-                        "upload_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        "original_name": file.filename,
-                        "endpoint": "/settings",
-                        "field_name": "background_image",
-                        "type": "background",
-                    }
-                )
+                # 🚨 VULNERABILITY: Store with ALL EXIF preserved (in-memory)
+                metadata = {
+                    "uploader": session["user"],
+                    "upload_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "original_name": file.filename,
+                    "endpoint": "/settings",
+                    "field_name": "background_image",
+                    "type": "background",
+                }
+                store_image_in_memory(file, filename, metadata)
 
                 flash("✅ Background image updated!", "success")
             except Exception as e:
@@ -419,3 +403,4 @@ def server_error(error):
     return render_template("500.html"), 500
 
 
+# Vercel serverless entry point - Flask app is automatically detected
