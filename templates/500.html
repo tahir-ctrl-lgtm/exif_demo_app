@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 Server Error</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>📸 EXIF Demo App</h1>
+            </div>
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}" class="nav-link">🏠 Home</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div style="text-align: center; padding: 50px;">
+            <h2 style="color: #ff6b6b; font-size: 48px; margin-bottom: 20px;">500</h2>
+            <h3 style="color: #333;">Server Error</h3>
+            <p style="color: #666; font-size: 16px;">Something went wrong on our end. Please try again later.</p>
+            <a href="{{ url_for('home') }}" class="btn btn-primary" style="margin-top: 20px;">🏠 Go to Home</a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>⚠️ <strong>FOR TESTING PURPOSES ONLY</strong></p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery - EXIF Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>📸 EXIF Demo App</h1>
+            </div>
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}" class="nav-link">🏠 Home</a>
+                <a href="{{ url_for('gallery') }}" class="nav-link active">🖼️ Gallery</a>
+                {% if session.logged_in %}
+                    <a href="{{ url_for('dashboard') }}" class="nav-link">📊 Dashboard</a>
+                    <a href="{{ url_for('profile') }}" class="nav-link">👤 Profile</a>
+                    <a href="{{ url_for('settings') }}" class="nav-link">⚙️ Settings</a>
+                    <span class="username">{{ session.user }}</span>
+                    <a href="{{ url_for('logout') }}" class="nav-link logout">🚪 Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-link btn-login">🔐 Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="page-header">
+            <h2>🖼️ Public Gallery</h2>
+            <p class="page-subtitle">View and download uploaded images with EXIF metadata</p>
+        </header>
+
+        <!-- Warning Box -->
+        <div class="warning-box large-warning">
+            <strong>🔴 VULNERABILITY NOTICE:</strong> All images displayed below are downloadable with their original EXIF metadata intact!
+            <p>This includes GPS coordinates, device information, author data, and other sensitive metadata.</p>
+        </div>
+
+        <!-- Gallery Stats -->
+        <section class="gallery-stats">
+            <div class="stat-card">
+                <h4>📊 Gallery Statistics</h4>
+                <p class="stat-number">{{ images|length }}</p>
+                <p class="stat-label">Total Images</p>
+            </div>
+            <div class="stat-card">
+                <h4>👥 Unique Uploaders</h4>
+                <p class="stat-number">{{ images|map(attribute='uploader')|unique|list|length }}</p>
+                <p class="stat-label">Users</p>
+            </div>
+            <div class="stat-card">
+                <h4>🔓 Access Level</h4>
+                <p class="stat-label">PUBLIC (No Auth Required)</p>
+            </div>
+            <div class="stat-card">
+                <h4>📥 Download Options</h4>
+                <p class="stat-label">Full EXIF Metadata Preserved</p>
+            </div>
+        </section>
+
+        <!-- Image Gallery -->
+        {% if images %}
+            <section class="gallery-section">
+                <h3>📸 All Uploaded Images</h3>
+                <div class="image-grid gallery-grid">
+                    {% for image in images %}
+                        <div class="gallery-image-card">
+                            <div class="image-container">
+                                <img src="{{ url_for('view_image', filename=image.filename) }}" 
+                                     alt="Gallery Image" 
+                                     loading="lazy"
+                                     class="gallery-image">
+                                <div class="image-overlay">
+                                    <a href="{{ url_for('view_image', filename=image.filename) }}" 
+                                       class="overlay-btn" 
+                                       target="_blank">
+                                        👁️ View Full Size
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="gallery-image-info">
+                                <div class="info-row">
+                                    <span class="info-label">Uploader:</span>
+                                    <span class="info-value"><strong>{{ image.uploader }}</strong></span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Filename:</span>
+                                    <span class="info-value">{{ image.original_name[:25] }}{{ '...' if image.original_name|length > 25 else '' }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Uploaded:</span>
+                                    <span class="info-value">{{ image.upload_time }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Endpoint:</span>
+                                    <span class="info-value endpoint-badge">{{ image.get('endpoint', 'unknown') }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Field:</span>
+                                    <span class="info-value field-badge">{{ image.get('field_name', 'unknown') }}</span>
+                                </div>
+                                
+                                <div class="gallery-actions">
+                                    <a href="{{ url_for('download_image', filename=image.filename) }}" 
+                                       class="action-btn btn-download"
+                                       title="Download with EXIF metadata">
+                                        ⬇️ Download (with EXIF)
+                                    </a>
+                                </div>
+
+                                <div class="exif-preview">
+                                    <p class="exif-warning">⚠️ This image contains EXIF metadata</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Scanner Information -->
+            <section class="scanner-info-section">
+                <h3>🔍 For Security Researchers</h3>
+                <div class="researcher-info">
+                    <div class="info-box">
+                        <h4>📋 Testing Instructions</h4>
+                        <ol>
+                            <li>Click "Download (with EXIF)" on any image</li>
+                            <li>Extract EXIF metadata using ExifTool or similar tool</li>
+                            <li>Verify the following data is present:
+                                <ul>
+                                    <li>GPS coordinates (if embedded in test image)</li>
+                                    <li>Device/camera information</li>
+                                    <li>Author/copyright metadata</li>
+                                    <li>Capture timestamp</li>
+                                    <li>Software/firmware versions</li>
+                                </ul>
+                            </li>
+                            <li>Compare with original image metadata</li>
+                            <li>Document findings in your EXIF scanner report</li>
+                        </ol>
+                    </div>
+
+                    <div class="info-box">
+                        <h4>🛠️ Useful Tools</h4>
+                        <ul>
+                            <li><code>exiftool</code> - Extract and analyze EXIF data</li>
+                            <li><code>PIL/Pillow</code> - Python image metadata extraction</li>
+                            <li><code>piexif</code> - Python EXIF data manipulation</li>
+                            <li><code>MetaClean</code> - EXIF metadata removal tool</li>
+                            <li>Online EXIF viewers - Quick web-based extraction</li>
+                        </ul>
+                    </div>
+
+                    <div class="info-box">
+                        <h4>📊 API Endpoints</h4>
+                        <p>Access uploaded images programmatically:</p>
+                        <code>/api/images</code> - List all uploaded images (JSON)
+                        <br>
+                        <code>/api/user-stats</code> - User upload statistics (requires auth)
+                    </div>
+
+                    <div class="info-box">
+                        <h4>🎯 Expected Scanner Results</h4>
+                        <ul>
+                            <li>✅ 3 upload endpoints discovered</li>
+                            <li>✅ All EXIF metadata categories preserved</li>
+                            <li>✅ GPS coordinates exposed in uploaded images</li>
+                            <li>✅ Device serial numbers visible</li>
+                            <li>✅ Author/PII data retained</li>
+                            <li>✅ High privacy risk assessment</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- API Access -->
+            <section class="api-section">
+                <h3>🔌 API Access</h3>
+                <div class="api-info">
+                    <p>Access image data programmatically via JSON API:</p>
+                    <div class="api-endpoint">
+                        <h4>GET /api/images</h4>
+                        <p>Returns list of all uploaded images with metadata</p>
+                        <pre>curl http://localhost:5000/api/images</pre>
+                    </div>
+                </div>
+            </section>
+
+        {% else %}
+            <section class="empty-gallery">
+                <div class="empty-message">
+                    <p>🖼️ Gallery is currently empty</p>
+                    <p>No images have been uploaded yet.</p>
+                    <div class="empty-actions">
+                        <a href="{{ url_for('login') }}" class="btn btn-primary">🔐 Login & Upload Images</a>
+                        <a href="{{ url_for('home') }}" class="btn btn-secondary">🏠 Back to Home</a>
+                    </div>
+                </div>
+            </section>
+        {% endif %}
+
+        <!-- EXIF Information Guide -->
+        <section class="exif-guide-section">
+            <h3>📚 EXIF Metadata Reference</h3>
+            <div class="exif-guide">
+                <div class="guide-card">
+                    <h4>🔴 CRITICAL Risk</h4>
+                    <ul>
+                        <li><strong>GPS Location:</strong> Exact coordinates of photo location</li>
+                        <li><strong>Device Serial:</strong> Unique device identifier for tracking</li>
+                    </ul>
+                </div>
+                <div class="guide-card">
+                    <h4>🟠 HIGH Risk</h4>
+                    <ul>
+                        <li><strong>Author/Artist:</strong> Real name and identity disclosure</li>
+                        <li><strong>Device Model:</strong> Camera/phone model for fingerprinting</li>
+                    </ul>
+                </div>
+                <div class="guide-card">
+                    <h4>🟡 MEDIUM Risk</h4>
+                    <ul>
+                        <li><strong>Timestamp:</strong> When photo was taken (routine analysis)</li>
+                        <li><strong>Software:</strong> Editing tools used (fingerprinting)</li>
+                    </ul>
+                </div>
+                <div class="guide-card">
+                    <h4>🟢 LOW Risk</h4>
+                    <ul>
+                        <li><strong>Lens Info:</strong> Photography equipment details</li>
+                        <li><strong>Comments:</strong> User notes or descriptions</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>⚠️ <strong>FOR TESTING PURPOSES ONLY</strong> | Public Gallery - No authentication required | All images downloadable with EXIF metadata</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - EXIF Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>📸 EXIF Demo App</h1>
+            </div>
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}" class="nav-link">🏠 Home</a>
+                <a href="{{ url_for('gallery') }}" class="nav-link">🖼️ Gallery</a>
+                <a href="{{ url_for('dashboard') }}" class="nav-link active">📊 Dashboard</a>
+                <a href="{{ url_for('profile') }}" class="nav-link">👤 Profile</a>
+                <a href="{{ url_for('settings') }}" class="nav-link">⚙️ Settings</a>
+                <span class="username">{{ user }}</span>
+                <a href="{{ url_for('logout') }}" class="nav-link logout">🚪 Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="page-header">
+            <h2>👤 Dashboard - {{ user }}</h2>
+            <p class="page-subtitle">Welcome to your personal dashboard</p>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Upload Section - Vulnerability #1 -->
+        <section class="upload-section vulnerability-section">
+            <div class="section-header">
+                <h3>📤 Upload Profile Picture</h3>
+                <span class="vuln-badge vuln-critical">VULNERABILITY #1</span>
+            </div>
+            
+            <div class="vuln-warning">
+                <strong>🔴 WARNING:</strong> Uploaded images will retain ALL EXIF metadata!
+            </div>
+
+            <div class="upload-info">
+                <div class="info-item">
+                    <strong>Endpoint:</strong> <code>/upload</code>
+                </div>
+                <div class="info-item">
+                    <strong>Field Name:</strong> <code>profile_picture</code>
+                </div>
+                <div class="info-item">
+                    <strong>Expected Leakage:</strong>
+                    <ul>
+                        <li>📍 GPS coordinates</li>
+                        <li>📱 Device information (camera model, serial)</li>
+                        <li>👤 Author/artist metadata</li>
+                        <li>⏰ Capture timestamp</li>
+                        <li>💾 Software/firmware versions</li>
+                    </ul>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('upload_file') }}" enctype="multipart/form-data" class="upload-form">
+                <div class="form-group">
+                    <label for="profile_picture" class="file-label">
+                        <span class="file-input-text">Choose Image File</span>
+                        <input 
+                            type="file" 
+                            id="profile_picture" 
+                            name="profile_picture" 
+                            accept="image/*" 
+                            required
+                            class="file-input"
+                        >
+                    </label>
+                    <p class="file-help">Supported formats: PNG, JPG, JPEG, GIF, BMP, TIFF (Max 16MB)</p>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-large">
+                    📤 Upload Profile Picture
+                </button>
+            </form>
+        </section>
+
+        <!-- Your Uploads -->
+        <section class="user-images-section">
+            <h3>📸 Your Uploaded Images</h3>
+            
+            {% if images %}
+                <div class="image-grid">
+                    {% for image in images %}
+                        <div class="image-card">
+                            <img src="{{ url_for('view_image', filename=image.filename) }}" alt="Upload" loading="lazy">
+                            <div class="image-info">
+                                <p class="filename">{{ image.original_name[:30] }}{{ '...' if image.original_name|length > 30 else '' }}</p>
+                                <p class="timestamp">⏰ {{ image.upload_time }}</p>
+                                <div class="image-meta">
+                                    <span class="meta-badge">{{ image.get('type', 'image') }}</span>
+                                    <span class="meta-badge meta-endpoint">{{ image.get('endpoint', 'unknown') }}</span>
+                                </div>
+                                <div class="image-actions">
+                                    <a href="{{ url_for('view_image', filename=image.filename) }}" class="action-btn" target="_blank">👁️ View</a>
+                                    <a href="{{ url_for('download_image', filename=image.filename) }}" class="action-btn">⬇️ Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-images">
+                    <p>No images uploaded yet. Upload your first image above!</p>
+                </div>
+            {% endif %}
+        </section>
+
+        <!-- Scanner Information -->
+        <section class="scanner-info-section">
+            <h3>🔍 Scanner Information</h3>
+            <div class="scanner-info-box">
+                <div class="info-column">
+                    <h4>📋 What to Test</h4>
+                    <ul>
+                        <li>Upload profile pictures with GPS/device metadata</li>
+                        <li>Download uploaded images</li>
+                        <li>Extract and compare EXIF data</li>
+                        <li>Verify metadata preservation</li>
+                        <li>Check for privacy leakage</li>
+                    </ul>
+                </div>
+                <div class="info-column">
+                    <h4>🎯 Expected Results</h4>
+                    <ul>
+                        <li>✅ 3 upload endpoints discovered</li>
+                        <li>✅ Multiple EXIF categories leaked</li>
+                        <li>✅ GPS coordinates preserved</li>
+                        <li>✅ Device serials exposed</li>
+                        <li>✅ Author PII retained</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>⚠️ <strong>FOR TESTING PURPOSES ONLY</strong> | Endpoint: <code>/upload</code> | Field: <code>profile_picture</code></p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - EXIF Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>📸 EXIF Demo App</h1>
+            </div>
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}" class="nav-link">🏠 Home</a>
+                <a href="{{ url_for('gallery') }}" class="nav-link">🖼️ Gallery</a>
+                <a href="{{ url_for('dashboard') }}" class="nav-link">📊 Dashboard</a>
+                <a href="{{ url_for('profile') }}" class="nav-link active">👤 Profile</a>
+                <a href="{{ url_for('settings') }}" class="nav-link">⚙️ Settings</a>
+                <span class="username">{{ user }}</span>
+                <a href="{{ url_for('logout') }}" class="nav-link logout">🚪 Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="page-header">
+            <h2>👤 User Profile - {{ user }}</h2>
+            <p class="page-subtitle">Manage your profile information and avatar</p>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Upload Section - Vulnerability #2 -->
+        <section class="upload-section vulnerability-section">
+            <div class="section-header">
+                <h3>📷 Upload Profile Avatar</h3>
+                <span class="vuln-badge vuln-critical">VULNERABILITY #2</span>
+            </div>
+            
+            <div class="vuln-warning">
+                <strong>🔴 WARNING:</strong> Avatar images will retain ALL EXIF metadata!
+            </div>
+
+            <div class="upload-info">
+                <div class="info-item">
+                    <strong>Endpoint:</strong> <code>/profile</code>
+                </div>
+                <div class="info-item">
+                    <strong>Field Name:</strong> <code>avatar</code>
+                </div>
+                <div class="info-item">
+                    <strong>Vulnerability Type:</strong> Information Disclosure / EXIF Metadata Leakage
+                </div>
+                <div class="info-item">
+                    <strong>Expected Leakage:</strong>
+                    <ul>
+                        <li>📍 GPS/Location coordinates (home address exposure)</li>
+                        <li>📱 Device information (camera model, serial numbers)</li>
+                        <li>👤 Author/artist metadata (PII disclosure)</li>
+                        <li>⏰ Date/time metadata (routine tracking)</li>
+                        <li>💾 Software/firmware information (fingerprinting)</li>
+                        <li>🎥 Lens information (equipment identification)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('profile') }}" enctype="multipart/form-data" class="upload-form">
+                <div class="form-group">
+                    <label for="avatar" class="file-label">
+                        <span class="file-input-text">Choose Avatar Image</span>
+                        <input 
+                            type="file" 
+                            id="avatar" 
+                            name="avatar" 
+                            accept="image/*" 
+                            required
+                            class="file-input"
+                        >
+                    </label>
+                    <p class="file-help">Supported formats: PNG, JPG, JPEG, GIF, BMP, TIFF (Max 16MB)</p>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-large">
+                    📤 Upload Avatar
+                </button>
+            </form>
+        </section>
+
+        <!-- Avatar Uploads -->
+        <section class="user-images-section">
+            <h3>📸 Your Avatars</h3>
+            
+            {% if images %}
+                <div class="image-grid">
+                    {% for image in images %}
+                        <div class="image-card">
+                            <img src="{{ url_for('view_image', filename=image.filename) }}" alt="Avatar" loading="lazy">
+                            <div class="image-info">
+                                <p class="filename">{{ image.original_name[:30] }}{{ '...' if image.original_name|length > 30 else '' }}</p>
+                                <p class="timestamp">⏰ {{ image.upload_time }}</p>
+                                <div class="image-meta">
+                                    <span class="meta-badge">avatar</span>
+                                    <span class="meta-badge meta-endpoint">/profile</span>
+                                </div>
+                                <div class="image-actions">
+                                    <a href="{{ url_for('view_image', filename=image.filename) }}" class="action-btn" target="_blank">👁️ View</a>
+                                    <a href="{{ url_for('download_image', filename=image.filename) }}" class="action-btn">⬇️ Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-images">
+                    <p>No avatars uploaded yet. Upload your first avatar above!</p>
+                </div>
+            {% endif %}
+        </section>
+
+        <!-- Privacy Impact -->
+        <section class="impact-section">
+            <h3>⚡ Privacy Impact - Avatar Upload</h3>
+            <div class="impact-cards">
+                <div class="impact-card">
+                    <h4>🏠 Location Exposure</h4>
+                    <p>GPS coordinates in avatar → Maps to home address → Stalking/burglary risk</p>
+                </div>
+                <div class="impact-card">
+                    <h4>📱 Device Tracking</h4>
+                    <p>Serial numbers → Cross-platform identification → Persistent user tracking</p>
+                </div>
+                <div class="impact-card">
+                    <h4>👤 Identity Disclosure</h4>
+                    <p>Author name → Real identity revealed → Targeted attacks/harassment</p>
+                </div>
+                <div class="impact-card">
+                    <h4>🎯 Routine Analysis</h4>
+                    <p>Timestamps + location → Daily patterns → Predictable physical location</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Scanner Guide -->
+        <section class="scanner-info-section">
+            <h3>🔍 Testing This Endpoint</h3>
+            <div class="scanner-guide">
+                <div class="guide-step">
+                    <h4>Step 1: Generate Test Images</h4>
+                    <p>Create images with embedded EXIF metadata including GPS, device info, and author PII</p>
+                </div>
+                <div class="guide-step">
+                    <h4>Step 2: Upload Avatar</h4>
+                    <p>Upload test image through this form (requires authentication)</p>
+                </div>
+                <div class="guide-step">
+                    <h4>Step 3: Download Image</h4>
+                    <p>Download the uploaded avatar using the download link</p>
+                </div>
+                <div class="guide-step">
+                    <h4>Step 4: Extract Metadata</h4>
+                    <p>Extract EXIF data from downloaded image and compare with original</p>
+                </div>
+                <div class="guide-step">
+                    <h4>Step 5: Verify Leakage</h4>
+                    <p>Confirm that EXIF metadata was preserved in uploaded file</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>⚠️ <strong>FOR TESTING PURPOSES ONLY</strong> | Endpoint: <code>/profile</code> | Field: <code>avatar</code></p>
+        </div>
+    </footer>
+</body>
+</html>

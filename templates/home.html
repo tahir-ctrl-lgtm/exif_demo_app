@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXIF Metadata Leakage Demo - Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>📸 EXIF Demo App</h1>
+                <p class="subtitle">Intentional Vulnerability Demonstration</p>
+            </div>
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}" class="nav-link active">🏠 Home</a>
+                <a href="{{ url_for('gallery') }}" class="nav-link">🖼️ Gallery</a>
+                {% if session.logged_in %}
+                    <a href="{{ url_for('dashboard') }}" class="nav-link">📊 Dashboard</a>
+                    <a href="{{ url_for('profile') }}" class="nav-link">👤 Profile</a>
+                    <a href="{{ url_for('settings') }}" class="nav-link">⚙️ Settings</a>
+                    <span class="username">{{ session.user }}</span>
+                    <a href="{{ url_for('logout') }}" class="nav-link logout">🚪 Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-link btn-login">🔐 Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Hero Section -->
+        <header class="hero">
+            <div class="hero-content">
+                <h2>⚠️ EXIF Metadata Leakage Demo</h2>
+                <p class="hero-subtitle">Intentionally Vulnerable Application for Testing EXIF Scanner</p>
+                <div class="warning-box">
+                    <strong>🔴 CRITICAL WARNING:</strong> This application does NOT strip EXIF metadata from uploaded images!
+                </div>
+                <p class="hero-description">
+                    This demo showcases how web applications can leak sensitive privacy information through improperly handled image uploads.
+                </p>
+            </div>
+        </header>
+
+        <!-- Vulnerabilities Overview -->
+        <section class="vulnerabilities-section">
+            <h3>🔍 Vulnerabilities Included</h3>
+            <div class="vuln-grid">
+                <div class="vuln-card card-critical">
+                    <div class="card-icon">📍</div>
+                    <h4>GPS/Location Coordinates</h4>
+                    <p>Exact home address, work location, and travel patterns exposed</p>
+                    <span class="severity">CRITICAL</span>
+                </div>
+                <div class="vuln-card card-critical">
+                    <div class="card-icon">📱</div>
+                    <h4>Device Serial Numbers</h4>
+                    <p>Camera and lens serial numbers enabling device tracking</p>
+                    <span class="severity">CRITICAL</span>
+                </div>
+                <div class="vuln-card card-high">
+                    <div class="card-icon">👤</div>
+                    <h4>Author/PII Data</h4>
+                    <p>Real name, email, and copyright information leaked</p>
+                    <span class="severity">HIGH</span>
+                </div>
+                <div class="vuln-card card-high">
+                    <div class="card-icon">📱</div>
+                    <h4>Device Information</h4>
+                    <p>Camera model, firmware version, and fingerprinting data</p>
+                    <span class="severity">HIGH</span>
+                </div>
+                <div class="vuln-card card-medium">
+                    <div class="card-icon">⏰</div>
+                    <h4>Timestamp Metadata</h4>
+                    <p>Original capture time for routine pattern analysis</p>
+                    <span class="severity">MEDIUM</span>
+                </div>
+                <div class="vuln-card card-medium">
+                    <div class="card-icon">💾</div>
+                    <h4>Software Information</h4>
+                    <p>Application and editing software versions exposed</p>
+                    <span class="severity">MEDIUM</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Upload Endpoints -->
+        <section class="endpoints-section">
+            <h3>📤 Upload Endpoints Tested</h3>
+            <div class="endpoints-grid">
+                <div class="endpoint-card">
+                    <div class="endpoint-number">1</div>
+                    <h4>/upload</h4>
+                    <p><strong>Field:</strong> profile_picture</p>
+                    <p><strong>Location:</strong> Dashboard</p>
+                    <p class="vuln-indicator">🔴 NO EXIF STRIPPING</p>
+                </div>
+                <div class="endpoint-card">
+                    <div class="endpoint-number">2</div>
+                    <h4>/profile</h4>
+                    <p><strong>Field:</strong> avatar</p>
+                    <p><strong>Location:</strong> Profile Page</p>
+                    <p class="vuln-indicator">🔴 NO EXIF STRIPPING</p>
+                </div>
+                <div class="endpoint-card">
+                    <div class="endpoint-number">3</div>
+                    <h4>/settings</h4>
+                    <p><strong>Field:</strong> background_image</p>
+                    <p><strong>Location:</strong> Settings Page</p>
+                    <p class="vuln-indicator">🔴 NO EXIF STRIPPING</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section class="features-section">
+            <h3>✨ Application Features</h3>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h4>🔐 Authentication</h4>
+                    <p>User login system with demo credentials for testing</p>
+                </div>
+                <div class="feature-card">
+                    <h4>📸 Multiple Upload Fields</h4>
+                    <p>3 different upload endpoints across authenticated pages</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🖼️ Public Gallery</h4>
+                    <p>All uploaded images accessible with full EXIF metadata</p>
+                </div>
+                <div class="feature-card">
+                    <h4>📥 Image Download</h4>
+                    <p>Users can download original images with preserved metadata</p>
+                </div>
+                <div class="feature-card">
+                    <h4>📊 API Endpoints</h4>
+                    <p>RESTful API for programmatic image metadata access</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🔍 Metadata Storage</h4>
+                    <p>Original EXIF data retained in uploaded files</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Uploads -->
+        <section class="recent-uploads-section">
+            <h3>📸 Recent Uploads</h3>
+            {% if images %}
+                <div class="image-grid">
+                    {% for image in images %}
+                        <div class="image-card">
+                            <img src="{{ url_for('view_image', filename=image.filename) }}" alt="Upload" loading="lazy">
+                            <div class="image-info">
+                                <p class="uploader">By: <strong>{{ image.uploader }}</strong></p>
+                                <p class="timestamp">⏰ {{ image.upload_time }}</p>
+                                <p class="filename">📄 {{ image.original_name[:30] }}{{ '...' if image.original_name|length > 30 else '' }}</p>
+                                <a href="{{ url_for('download_image', filename=image.filename) }}" class="download-btn">⬇️ Download</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-images">
+                    <p>No images uploaded yet. <a href="{{ url_for('login') }}">Login</a> to upload!</p>
+                </div>
+            {% endif %}
+        </section>
+
+        <!-- Getting Started -->
+        <section class="getting-started-section">
+            <h3>🚀 Getting Started</h3>
+            <div class="steps-container">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h4>Login</h4>
+                    <p>Use demo credentials to access the application</p>
+                    <code>Username: demo | Password: demo123</code>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h4>Upload Images</h4>
+                    <p>Upload test images with embedded EXIF metadata</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h4>Run Scanner</h4>
+                    <p>Point your EXIF scanner at this application</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h4>View Results</h4>
+                    <p>Analyze discovered vulnerabilities in the report</p>
+                </div>
+            </div>
+            <div class="cta-buttons">
+                <a href="{{ url_for('login') }}" class="btn btn-primary">🔐 Login Now</a>
+                <a href="{{ url_for('gallery') }}" class="btn btn-secondary">🖼️ View Gallery</a>
+            </div>
+        </section>
+
+        <!-- Impact Assessment -->
+        <section class="impact-section">
+            <h3>⚡ Real-World Attack Scenarios</h3>
+            <div class="scenario-grid">
+                <div class="scenario-card">
+                    <h4>🏠 Home Address Exposure</h4>
+                    <p>GPS coordinates in photos → maps to residential address → stalking/burglary risk</p>
+                </div>
+                <div class="scenario-card">
+                    <h4>👥 Identity Disclosure</h4>
+                    <p>Author name in EXIF → real identity revealed → targeted attacks/harassment</p>
+                </div>
+                <div class="scenario-card">
+                    <h4>🎯 Device Tracking</h4>
+                    <p>Serial numbers → cross-platform user identification → persistent tracking</p>
+                </div>
+                <div class="scenario-card">
+                    <h4>📍 Routine Analysis</h4>
+                    <p>Timestamps + GPS → daily patterns → predictable physical location</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Compliance Info -->
+        <section class="compliance-section">
+            <h3>⚖️ Regulatory Compliance</h3>
+            <div class="compliance-grid">
+                <div class="compliance-item">
+                    <strong>GDPR Article 9</strong>
+                    <p>GPS coordinates are special category personal data</p>
+                </div>
+                <div class="compliance-item">
+                    <strong>CCPA</strong>
+                    <p>Location data classified as sensitive personal information</p>
+                </div>
+                <div class="compliance-item">
+                    <strong>CWE-359</strong>
+                    <p>Exposure of private personal information to unauthorized actors</p>
+                </div>
+                <div class="compliance-item">
+                    <strong>CWE-200</strong>
+                    <p>Exposure of sensitive information to unauthorized actors</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>⚠️ <strong>FOR TESTING PURPOSES ONLY</strong> | Do not use in production environments</p>
+            <p>Created for demonstrating EXIF metadata leakage vulnerabilities</p>
+        </div>
+    </footer>
+</body>
+</html>

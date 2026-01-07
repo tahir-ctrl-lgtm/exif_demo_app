@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - EXIF Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>📸 EXIF Demo App</h1>
+            </div>
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}" class="nav-link">🏠 Home</a>
+                <a href="{{ url_for('gallery') }}" class="nav-link">🖼️ Gallery</a>
+                <a href="{{ url_for('dashboard') }}" class="nav-link">📊 Dashboard</a>
+                <a href="{{ url_for('profile') }}" class="nav-link">👤 Profile</a>
+                <a href="{{ url_for('settings') }}" class="nav-link active">⚙️ Settings</a>
+                <span class="username">{{ user }}</span>
+                <a href="{{ url_for('logout') }}" class="nav-link logout">🚪 Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="page-header">
+            <h2>⚙️ Settings - {{ user }}</h2>
+            <p class="page-subtitle">Customize your application settings</p>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Upload Section - Vulnerability #3 -->
+        <section class="upload-section vulnerability-section">
+            <div class="section-header">
+                <h3>🎨 Upload Background Image</h3>
+                <span class="vuln-badge vuln-critical">VULNERABILITY #3</span>
+            </div>
+            
+            <div class="vuln-warning">
+                <strong>🔴 WARNING:</strong> Background images will preserve ALL EXIF metadata!
+            </div>
+
+            <div class="upload-info">
+                <div class="info-item">
+                    <strong>Endpoint:</strong> <code>/settings</code>
+                </div>
+                <div class="info-item">
+                    <strong>Field Name:</strong> <code>background_image</code>
+                </div>
+                <div class="info-item">
+                    <strong>Vulnerability Type:</strong> Information Disclosure / EXIF Metadata Leakage
+                </div>
+                <div class="info-item">
+                    <strong>Risk Level:</strong> <span class="risk-critical">CRITICAL</span>
+                </div>
+                <div class="info-item">
+                    <strong>Expected EXIF Leakage Categories:</strong>
+                    <div class="exif-categories">
+                        <span class="category-badge">GPS Location</span>
+                        <span class="category-badge">Device Serial</span>
+                        <span class="category-badge">Author PII</span>
+                        <span class="category-badge">Timestamps</span>
+                        <span class="category-badge">Software Info</span>
+                        <span class="category-badge">Lens Info</span>
+                        <span class="category-badge">Copyright</span>
+                        <span class="category-badge">Comments</span>
+                    </div>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('settings') }}" enctype="multipart/form-data" class="upload-form">
+                <div class="form-group">
+                    <label for="background_image" class="file-label">
+                        <span class="file-input-text">Choose Background Image</span>
+                        <input 
+                            type="file" 
+                            id="background_image" 
+                            name="background_image" 
+                            accept="image/*" 
+                            required
+                            class="file-input"
+                        >
+                    </label>
+                    <p class="file-help">Recommended size: 1920x1080px | Supported formats: PNG, JPG, JPEG, GIF, BMP, TIFF (Max 16MB)</p>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-large">
+                    🎨 Upload Background
+                </button>
+            </form>
+        </section>
+
+        <!-- EXIF Metadata Test Information -->
+        <section class="test-info-section">
+            <h3>📊 EXIF Metadata Testing Information</h3>
+            
+            <div class="test-info-grid">
+                <div class="test-info-card">
+                    <h4>10 EXIF Categories Tested</h4>
+                    <ol>
+                        <li><strong>GPS/Location Metadata</strong> - Home address, coordinates</li>
+                        <li><strong>Device Information</strong> - Camera model, firmware</li>
+                        <li><strong>Serial Numbers</strong> - Device/sensor serials</li>
+                        <li><strong>Author/Artist PII</strong> - Name, email, copyright</li>
+                        <li><strong>Timestamps</strong> - Date/time of capture</li>
+                        <li><strong>Software/Firmware</strong> - App versions, tools used</li>
+                        <li><strong>Image Comments</strong> - User notes, descriptions</li>
+                        <li><strong>Geometry/Size</strong> - Pixel dimensions, resolution</li>
+                        <li><strong>Lens Information</strong> - Lens model, specifications</li>
+                        <li><strong>Copyright/Rights</strong> - Ownership, licensing info</li>
+                    </ol>
+                </div>
+
+                <div class="test-info-card">
+                    <h4>Privacy Risks by Category</h4>
+                    <ul>
+                        <li><strong>🔴 CRITICAL:</strong> GPS coordinates → Home address exposure</li>
+                        <li><strong>🔴 CRITICAL:</strong> Device serials → Persistent tracking</li>
+                        <li><strong>🟠 HIGH:</strong> Author PII → Identity disclosure</li>
+                        <li><strong>🟠 HIGH:</strong> Device info → Fingerprinting/tracking</li>
+                        <li><strong>🟡 MEDIUM:</strong> Timestamps → Routine analysis</li>
+                        <li><strong>🟡 MEDIUM:</strong> Software info → App identification</li>
+                        <li><strong>🟢 LOW:</strong> Comments → Accidental info leakage</li>
+                        <li><strong>🟢 LOW:</strong> Lens info → Equipment identification</li>
+                    </ul>
+                </div>
+
+                <div class="test-info-card">
+                    <h4>Real-World Attack Scenarios</h4>
+                    <ul>
+                        <li>🏠 <strong>Home Address Exposure:</strong> GPS in photos mapped to address</li>
+                        <li>🎯 <strong>Targeted Attacks:</strong> Device serials linked across sites</li>
+                        <li>📍 <strong>Location Tracking:</strong> Timestamps + GPS for routine analysis</li>
+                        <li>👤 <strong>Identity Disclosure:</strong> Author name reveals real identity</li>
+                        <li>💼 <strong>Corporate Espionage:</strong> Facility location from coordinates</li>
+                        <li>🚗 <strong>Vehicle Tracking:</strong> Serial numbers for persistent ID</li>
+                    </ul>
+                </div>
+
+                <div class="test-info-card">
+                    <h4>Regulatory Compliance</h4>
+                    <ul>
+                        <li><strong>GDPR Article 9:</strong> GPS = special category data</li>
+                        <li><strong>CCPA:</strong> Location = sensitive personal information</li>
+                        <li><strong>HIPAA:</strong> Facility location in medical photos</li>
+                        <li><strong>CWE-359:</strong> Exposure of private personal information</li>
+                        <li><strong>CWE-200:</strong> Exposure of sensitive information</li>
+                        <li><strong>OWASP A01:</strong> Information disclosure vulnerability</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testing Workflow -->
+        <section class="workflow-section">
+            <h3>🔍 Complete Testing Workflow</h3>
+            <div class="workflow-container">
+                <div class="workflow-step">
+                    <div class="step-number">1️⃣</div>
+                    <h4>Generate Test Images</h4>
+                    <p>Create images with embedded EXIF metadata in all 10 categories</p>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-number">2️⃣</div>
+                    <h4>Authenticate</h4>
+                    <p>Login with test credentials to access upload endpoints</p>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-number">3️⃣</div>
+                    <h4>Upload Images</h4>
+                    <p>Upload test images to all 3 endpoints (dashboard, profile, settings)</p>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-number">4️⃣</div>
+                    <h4>Download Images</h4>
+                    <p>Download uploaded images from server/gallery</p>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-number">5️⃣</div>
+                    <h4>Extract EXIF</h4>
+                    <p>Extract metadata from downloaded images</p>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-number">6️⃣</div>
+                    <h4>Compare Data</h4>
+                    <p>Compare original vs. downloaded EXIF metadata</p>
+                </div>
+                <div class="workflow-arrow">→</div>
+                <div class="workflow-step">
+                    <div class="step-number">7️⃣</div>
+                    <h4>Generate Report</h4>
+                    <p>Create comprehensive vulnerability report with findings</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Scanner Checklist -->
+        <section class="checklist-section">
+            <h3>✅ Scanner Testing Checklist</h3>
+            <div class="checklist">
+                <div class="checklist-item">
+                    <input type="checkbox" id="check1" disabled>
+                    <label for="check1">Discover 3 upload endpoints across authenticated pages</label>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" id="check2" disabled>
+                    <label for="check2">Successfully upload test images with embedded EXIF</label>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" id="check3" disabled>
+                    <label for="check3">Download uploaded images from server</label>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" id="check4" disabled>
+                    <label for="check4">Extract EXIF metadata from downloaded images</label>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" id="check5" disabled>
+                    <label for="check5">Verify all 10 EXIF categories are preserved</label>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" id="check6" disabled>
+                    <label for="check6">Detect GPS coordinates exposure</label>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" id="check7" disabled>
+                    <label for="check7">Detect device serial number leakage</label>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" id="check8" disabled>
+                    <label for="check8">Detect author/PII data exposure</label>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" id="check9" disabled>
+                    <label for="check9">Calculate privacy impact severity scores</label>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" id="check10" disabled>
+                    <label for="check10">Generate comprehensive final report</label>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>⚠️ <strong>FOR TESTING PURPOSES ONLY</strong> | Endpoint: <code>/settings</code> | Field: <code>background_image</code></p>
+        </div>
+    </footer>
+</body>
+</html>

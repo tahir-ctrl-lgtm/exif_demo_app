@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - EXIF Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>📸 EXIF Demo App</h1>
+            </div>
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}" class="nav-link">🏠 Home</a>
+                <a href="{{ url_for('gallery') }}" class="nav-link">🖼️ Gallery</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="login-container">
+            <div class="login-box">
+                <h2>🔐 User Authentication</h2>
+                
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Login Form -->
+                <form method="POST" action="{{ url_for('login') }}" class="login-form">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input 
+                            type="text" 
+                            id="username" 
+                            name="username" 
+                            required 
+                            autofocus
+                            placeholder="Enter username"
+                            class="form-input"
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            required
+                            placeholder="Enter password"
+                            class="form-input"
+                        >
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">
+                        🔓 Login
+                    </button>
+                </form>
+
+                <!-- Demo Credentials -->
+                <div class="credentials-box">
+                    <h4>📋 Test Credentials</h4>
+                    <p class="credentials-intro">Use any of the following credentials to login:</p>
+                    
+                    <div class="credential-item">
+                        <div class="cred-field">
+                            <span class="label">Username:</span>
+                            <code class="value">demo</code>
+                        </div>
+                        <div class="cred-field">
+                            <span class="label">Password:</span>
+                            <code class="value">demo123</code>
+                        </div>
+                    </div>
+
+                    <div class="credential-item">
+                        <div class="cred-field">
+                            <span class="label">Username:</span>
+                            <code class="value">testuser</code>
+                        </div>
+                        <div class="cred-field">
+                            <span class="label">Password:</span>
+                            <code class="value">password</code>
+                        </div>
+                    </div>
+
+                    <div class="credential-item">
+                        <div class="cred-field">
+                            <span class="label">Username:</span>
+                            <code class="value">admin</code>
+                        </div>
+                        <div class="cred-field">
+                            <span class="label">Password:</span>
+                            <code class="value">admin123</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Box -->
+                <div class="info-box">
+                    <h4>ℹ️ About This Application</h4>
+                    <p>This demo app is intentionally vulnerable to EXIF metadata leakage attacks. After login, you can:</p>
+                    <ul>
+                        <li>Upload images with embedded EXIF data</li>
+                        <li>Test 3 different upload endpoints</li>
+                        <li>View uploaded images in the gallery</li>
+                        <li>Download images with full metadata intact</li>
+                    </ul>
+                </div>
+
+                <!-- Back Link -->
+                <div class="login-footer">
+                    <a href="{{ url_for('home') }}" class="back-link">← Back to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>⚠️ <strong>FOR TESTING PURPOSES ONLY</strong> | Do not use in production</p>
+        </div>
+    </footer>
+</body>
+</html>
