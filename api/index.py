@@ -7,6 +7,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import secrets
 import io
+from vercel_blob import put
+from vercel_blob import put
 
 app = Flask(__name__, 
             template_folder='../templates',
@@ -35,26 +37,38 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def store_image_in_memory(file, filename, metadata):
+def store_image_in_blob(file, filename, metadata):
     """
-    🚨 VULNERABILITY: Store file IN MEMORY preserving ALL EXIF metadata
+    🚨 VULNERABILITY: Store image in Vercel Blob with RAW bytes (EXIF preserved)
     
     Stores the raw binary data without processing, preserving all EXIF metadata.
     This simulates a naive developer who doesn't realize EXIF metadata is a privacy risk.
     """
     # Read file into memory preserving ALL EXIF data
     file.seek(0)
-    image_data = file.read()
+    raw_bytes = file.read()
     
-    # Store with metadata
+    # Upload to Vercel Blob with public access (EXIF preserved)
+    blob = put(
+        filename,
+        raw_bytes,
+        content_type=file.content_type or "image/jpeg",
+        access="public"  # Public URL required for scanner
+    )
+    
+    # Store metadata with Blob URL
     uploaded_images.append({
         "filename": filename,
-        "data": image_data,
-        "mimetype": file.content_type or "image/jpeg",
-        **metadata
+        "blob_url": blob["url"],  # Public CDN URL
+        "uploader": metadata["uploader"],
+        "upload_time": metadata["upload_time"],
+        "original_name": metadata["original_name"],
+        "endpoint": metadata["endpoint"],
+        "field_name": metadata["field_name"],
+        "type": metadata["type"],
     })
     
-    return True
+    return blob["url"]
 
 
 # ============================================================================
@@ -86,22 +100,14 @@ def download_image(filename):
     - Serial numbers visible (tracking)
     - Timestamp metadata included (routine analysis)
     """
-    try:
-        # Find image in memory storage
-        image_obj = next((img for img in uploaded_images if img["filename"] == filename), None)
-        if not image_obj:
-            flash("Image not found", "error")
-            return redirect(url_for("gallery"))
-        
-        # Serve image from memory with ALL EXIF preserved
-        return Response(
-            image_obj["data"],
-            mimetype=image_obj["mimetype"],
-            headers={"Content-Disposition": f"inline; filename={filename}"}
-        )
-    except Exception as e:
-        flash(f"Error downloading image: {str(e)}", "error")
+    # Find image and redirect to Blob URL
+    image_obj = next((img for img in uploaded_images if img["filename"] == filename), None)
+    if not image_obj:
+        flash("Image not found", "error")
         return redirect(url_for("gallery"))
+    
+    # Redirect to public Blob URL (scanner can download directly)
+    return redirect(image_obj["blob_url"], code=302)
 
 
 @app.route("/view/<filename>")
@@ -112,21 +118,14 @@ def view_image(filename):
     Browser will load and display the image including all EXIF metadata.
     Tools like browser developer console can extract this metadata.
     """
-    try:
-        # Find image in memory storage
-        image_obj = next((img for img in uploaded_images if img["filename"] == filename), None)
-        if not image_obj:
-            flash("Image not found", "error")
-            return redirect(url_for("gallery"))
-        
-        # Serve image from memory with ALL EXIF preserved
-        return Response(
-            image_obj["data"],
-            mimetype=image_obj["mimetype"]
-        )
-    except Exception as e:
-        flash(f"Error loading image: {str(e)}", "error")
+    # Find image and redirect to Blob URL
+    image_obj = next((img for img in uploaded_images if img["filename"] == filename), None)
+    if not image_obj:
+        flash("Image not found", "error")
         return redirect(url_for("gallery"))
+    
+    # Redirect to public Blob URL (browser displays with EXIF intact)
+    return redirect(image_obj["blob_url"], code=302)
 
 
 # ============================================================================
@@ -219,7 +218,7 @@ def upload_file():
                 "field_name": "profile_picture",
                 "type": "profile",
             }
-            store_image_in_memory(file, filename, metadata)
+            store_image_in_blob(file, filename, metadata)
 
             flash(
                 f"✅ Profile picture uploaded successfully: {file.filename}", "success"
@@ -272,7 +271,7 @@ def profile():
                     "field_name": "avatar",
                     "type": "avatar",
                 }
-                store_image_in_memory(file, filename, metadata)
+                store_image_in_blob(file, filename, metadata)
 
                 flash("✅ Avatar updated successfully!", "success")
             except Exception as e:
@@ -328,7 +327,7 @@ def settings():
                     "field_name": "background_image",
                     "type": "background",
                 }
-                store_image_in_memory(file, filename, metadata)
+                store_image_in_blob(file, filename, metadata)
 
                 flash("✅ Background image updated!", "success")
             except Exception as e:
@@ -351,7 +350,8 @@ def api_images():
                 "original_name": img["original_name"],
                 "endpoint": img.get("endpoint", "unknown"),
                 "field_name": img.get("field_name", "unknown"),
-                "download_url": url_for("download_image", filename=img["filename"]),
+                "download_url": img["blob_url"],  # Direct Blob URL for scanner
+                "blob_url": img["blob_url"],  # Explicit Blob URL
             }
             for img in uploaded_images
         ]
